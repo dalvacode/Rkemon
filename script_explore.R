@@ -99,7 +99,9 @@ df_dex <- raw_dex %>%
     category = species,
     type_1,
     type_2,
-    pc_male = percentage_male
+    pc_male = percentage_male,
+    egg_type_1,
+    egg_type_2
   ) %>%
   mutate(
     across(c(id, ndex), ~ as.numeric(.x))
@@ -129,6 +131,7 @@ df_dex <- df_dex %>%
       str_detect(name, "Necrozma") ~ "Necrozma",
       str_detect(name, "Ash-Greninja") ~ "Greninja",
       str_detect(name, "Rockruff") ~ "Rockruff",
+      ndex %in% c(978:999) ~ name,
       str_detect(name, " ") ~ str_sub(name, 1, str_locate(name, " ")[,1]-1),
       TRUE ~ name
       )
@@ -302,9 +305,16 @@ df_pkm %>% tabyl(sex)
 df_pkm <- df_pkm %>%
   mutate(
     rarity = case_when(
-      species %in% c("Moltres", "Zapdos", "Articuno") ~ "Legendary",
-      rarity == "Sub Legendary" ~ "Pseudo-legendary",
-      rarity == "Mythical" ~ "Legendary",
+      species %in% c("Bulbasaur", "Charmander", "Squirtle",
+                     "Chikorita", "Cyndaquil", "Totodile",
+                     "Treecko", "Torchic", "Mudkip",
+                     "Turtwig", "Chimchar", "Piplup",
+                     "Snivy", "Tepig", "Oshawott",
+                     "Chespin", "Fennekin", "Froakie",
+                     "Rowlet", "Litten", "Popplio",
+                     "Grookey", "Scorbunny", "Sobble",
+                     "Sprigatito", "Fuecoco", "Quaxly") ~ "Starter",
+      ndex %in% c(793:799, 803_806) ~ "Ultra Beasts",
       TRUE ~ rarity
       )
     )
@@ -314,6 +324,14 @@ df_pkm %>% tabyl(rarity)
 df_pkm <- df_pkm %>%
   mutate(
     gen = case_when(
+      extra == "Mega" ~ "6",
+      regional == "Alolan" ~ "7",
+      regional %in% c("Galarian") ~ "8",
+      regional %in% c("Hisuian") ~ "8.5",
+      regional == "Paldean" ~ "9",
+      TRUE ~ gen
+    ),
+    gen_name = case_when(
       gen == "1" ~ str_c(gen, "-Kanto"),
       gen == "2" ~ str_c(gen, "-Johto"),
       gen == "3" ~ str_c(gen, "-Hoenn"),
@@ -322,15 +340,9 @@ df_pkm <- df_pkm %>%
       gen == "6" ~ str_c(gen, "-Kalos"),
       gen == "7" ~ str_c(gen, "-Alola"),
       gen == "8" ~ str_c(gen, "-Galar"),
+      gen == "8.5" ~ str_c(gen, "-Hisui"),
       gen == "9" ~ str_c(gen, "-Paldea"),
       TRUE ~ NA_character_
-    ),
-    gen = case_when(
-      extra == "Mega" ~ "6-Kalos",
-      regional == "Alolan" ~ "7-Alola",
-      regional %in% c("Galarian", "Hisuian") ~ "8-Galar",
-      regional == "Paldean" ~ "9-Paldea",
-      TRUE ~ gen
       )
     )
 df_pkm %>% tabyl(gen)
