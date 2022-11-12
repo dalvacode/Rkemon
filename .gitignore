@@ -3,8 +3,8 @@
 .Rapp.history
 
 # RStudio files
-.Rproj.user/
 .Rproj
+.Rproj.user/
 
 # R files
 .RData
