@@ -4,6 +4,7 @@
 
 # RStudio files
 .Rproj.user/
+.Rproj
 
 # R files
 .RData
