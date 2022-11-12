@@ -1,11 +1,18 @@
 pokemon_dex
 link: https://www.kaggle.com/datasets/mariotormo/complete-pokemon-dataset-updated-090420
 
-pokemon_fam
+pokemon_lines
 link: https://bulbapedia.bulbagarden.net/w/index.php?title=List_of_Pok%C3%A9mon_by_evolution_family
+
+pokemon_types
+link: https://pokemondb.net/type/dual
+
+pokemon_dex_hisui:
+own (data from bulbapedia and serebii)
+
+pokemon_dex_hisui_paldea:
+link: https://pastebin.com/cT0uyLXg, https://pastebin.com/ULmyXSpz
 
 pokemon_list
 link: https://bulbapedia.bulbagarden.net/w/index.php?title=List_of_Pok%C3%A9mon_by_National_Pok%C3%A9dex_number
 
-pokemon_types
-link: https://pokemondb.net/type/dual
