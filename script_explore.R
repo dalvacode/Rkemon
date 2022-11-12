@@ -33,7 +33,7 @@ df_lines <- raw_lines %>%
   )
 
 ## Filter and format
-df_fam <- df_fam %>%
+df_lines <- df_lines %>%
   filter(!is.na(line)) %>%
   #filter(!str_detect(line, "line")) %>%
   mutate(
@@ -58,7 +58,7 @@ df_fam <- df_fam %>%
     # evo1bis = str_detect(evo1, "<"))
   
 
-df_fam <- df_fam %>%
+df_lines <- df_lines %>%
   pivot_longer(
     cols = c(species1, species2, species3),
     names_to = "test",
@@ -68,7 +68,7 @@ df_fam <- df_fam %>%
   filter(!is.na(name)) %>%
   select(species, line, name)
 
-# df_fam <- df_fam %>%
+# df_lines <- df_lines %>%
 #   mutate(
 #     regional = case_when(
 #       str_detect(line, "Red Stripe|Blue Stripe") ~ NA_character_,
@@ -179,7 +179,7 @@ df_pkm %>% tabyl(regional)
 
 
 ### Line
-## Regional families
+## Regional lines
 df_pkm <- df_pkm %>%
   filter(name %in% c("Pichu", "Pikachu", "Exeggcute", "Cubone")) %>%
   filter(name_extended != "Partner Pikachu") %>%
@@ -219,20 +219,18 @@ df_pkm <- df_pkm %>%
   ) %>% distinct(.keep_all = T)
 
 
-tab_spec_fam <- df_pkm %>%
+tab_spec_lines <- df_pkm %>%
   group_by(species) %>%
   summarize(
     n = n(),
-    n_fam = length(unique(line)),
+    n_lines = length(unique(line)),
     description = str_c(unique(line), collapse = ", ")
     )
 
-tab_spec_fam %>% filter(n_fam > 1) %>% print(n = 50) #36 species with families >= 2
+tab_spec_lines %>% filter(n_lines > 1) %>% print(n = 50) #38 species with lines >= 2
 
 
 ### Extra forms
-
-
 df_pkm <- df_pkm %>%
   mutate(
     extra = case_when(
@@ -276,7 +274,7 @@ df_pkm <- df_pkm %>%
 
 df_pkm <- df_pkm %>%
   mutate(
-    sex = case_when(
+    sexed = case_when(
       !is.na(pc_male) ~ "Sexual",
       species %in% c("Voltorb", "Magnemite", "Staryu", "Ditto", "Porygon", "Unown",
                      "Shedinja", "Lunatone", "Solrock", "Baltoy", "Beldum", "Bronzor",
@@ -288,17 +286,17 @@ df_pkm <- df_pkm %>%
 
 # Fix galarian forms
 input <- df_pkm %>%
-  filter(is.na(sex)) %>%
-  select(-sex, -pc_male)
+  filter(is.na(sexed)) %>%
+  select(-sexed, -pc_male)
 output <- df_pkm %>%
   filter(species %in% input$species) %>%
   distinct(species, .keep_all = T) %>%
-  select(species, sex, pc_male) %>%
+  select(species, sexed, pc_male) %>%
   left_join(x = input, by = "species")
 
-df_pkm <- df_pkm %>% filter(!is.na(sex)) %>% bind_rows(output) %>% arrange(id)
+df_pkm <- df_pkm %>% filter(!is.na(sexed)) %>% bind_rows(output) %>% arrange(id)
 
-df_pkm %>% tabyl(sex)
+df_pkm %>% tabyl(sexed)
 
 
 ### Rarity
@@ -314,9 +312,16 @@ df_pkm <- df_pkm %>%
                      "Rowlet", "Litten", "Popplio",
                      "Grookey", "Scorbunny", "Sobble",
                      "Sprigatito", "Fuecoco", "Quaxly") ~ "Starter",
-      ndex %in% c(793:799, 803_806) ~ "Ultra Beasts",
+      ndex %in% c(793:799, 803:806) ~ "Ultra Beasts",
+      species %in% c("Dratini", "Larvitar", "Bagon", "Beldum",
+                     "Gible", "Deino", "Goomy",
+                     "Jangmo-o", "Dreepy", "Frigibax") ~ "Pseudo-Legendary",
+      rarity == "Normal" ~ "Regular",
+      rarity == "Sub Legendary" ~ "Sub-legendary",
       TRUE ~ rarity
-      )
+      ) %>% factor(levels = c("Regular", "Starter", "Pseudo-Legendary",
+                              "Sub-legendary", "Legendary", "Mythical",
+                              "Ultra Beasts", "Paradox"))
     )
 df_pkm %>% tabyl(rarity)
 
@@ -344,7 +349,8 @@ df_pkm <- df_pkm %>%
       gen == "9" ~ str_c(gen, "-Paldea"),
       TRUE ~ NA_character_
       )
-    )
+    ) %>%
+  relocate(gen_name, .after = gen)
 df_pkm %>% tabyl(gen)
 
 
