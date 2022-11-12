@@ -10,23 +10,23 @@ library(tidyverse)
 
 # Read --------------------------------------------------------------------
 
-# raw_list <- read_excel("data/pokemon_list.xlsx", col_types = "text")
+# raw_list <- read_excel("data/old/pokemon_list.xlsx", col_types = "text")
 
-#raw_fam <- read_excel("data/pokemon_families.xlsx", col_types = "text")
-raw_fam <- read_excel("data/pokemon_families_extended.xlsx", col_types = "text")
+#raw_fam <- read_excel("data/pokemon_lines.xlsx", col_types = "text")
+raw_lines <- read_excel("data/pokemon_lines_extended.xlsx", col_types = "text")
 
 raw_dex <- read_delim("data/pokemon_dex.csv", delim = ",", col_types = c(.default = "c"))
 
 #raw_dex_new <- read_excel("data/pokemon_dex_hisui.xlsx", col_types = "text")
 raw_dex_new <- read_excel("data/pokemon_dex_hisui_paldea.xlsx", col_types = "text")
 
-# Tidy family -------------------------------------------------------------
+# Tidy evolution line -----------------------------------------------------
 
 ## Clean and select
-df_fam <- raw_fam %>%
+df_lines <- raw_lines %>%
   clean_names() %>%
   select(
-    family,
+    line,
     species1,
     species2,
     species3
@@ -34,8 +34,8 @@ df_fam <- raw_fam %>%
 
 ## Filter and format
 df_fam <- df_fam %>%
-  filter(!is.na(family)) %>%
-  #filter(!str_detect(family, "family")) %>%
+  filter(!is.na(line)) %>%
+  #filter(!str_detect(line, "line")) %>%
   mutate(
     species = species1
     )
@@ -46,10 +46,10 @@ df_fam <- df_fam %>%
     #   TRUE ~ NA_real_
     # ),
     # regional = case_when(
-    #   #str_detect(family, "Stripe)$") ~ ,
-    #   str_detect(family, "\\(") ~ str_sub(
-    #     family,
-    #     str_locate(family, "\\(")[,1]+1,
+    #   #str_detect(line, "Stripe)$") ~ ,
+    #   str_detect(line, "\\(") ~ str_sub(
+    #     line,
+    #     str_locate(line, "\\(")[,1]+1,
     #     -2
     #     ),
     #   TRUE ~ NA_character_
@@ -64,18 +64,18 @@ df_fam <- df_fam %>%
     names_to = "test",
     values_to = "name"
     ) %>%
-  distinct(species, family, name, .keep_all = T) %>%
+  distinct(species, line, name, .keep_all = T) %>%
   filter(!is.na(name)) %>%
-  select(species, family, name)
+  select(species, line, name)
 
 # df_fam <- df_fam %>%
 #   mutate(
 #     regional = case_when(
-#       str_detect(family, "Red Stripe|Blue Stripe") ~ NA_character_,
-#       str_detect(family, "White Stripe") ~ "Hisuian",
-#       str_detect(family, "\\(") ~ str_sub(
-#         family,
-#         str_locate(family, "\\(")[,1]+1,
+#       str_detect(line, "Red Stripe|Blue Stripe") ~ NA_character_,
+#       str_detect(line, "White Stripe") ~ "Hisuian",
+#       str_detect(line, "\\(") ~ str_sub(
+#         line,
+#         str_locate(line, "\\(")[,1]+1,
 #         -2
 #         ),
 #       TRUE ~ NA_character_
@@ -118,7 +118,7 @@ df_dex <- df_dex %>%
     # !str_detect(name, "^Mega |Ash-|Shield Forme$"),
     # ## Others unimportant forms: Deoxys, Giratina, Forces of Nature, Keldeo
     # !str_detect(name, " Forme$")
-    # ## Forms to keep, same family: Shaymin, Kyurem, Meloetta, Zygarde
+    # ## Forms to keep, same line: Shaymin, Kyurem, Meloetta, Zygarde
   ) %>%
   mutate(
     name_extended = name,
@@ -155,7 +155,7 @@ df_pkm <- df_pkm %>%
       str_detect(name_extended, "Alolan|Galarian|Hisuian|Paldean") ~ str_sub(
         name_extended, 1, str_locate(name_extended, " ")[,1]-1
         ),
-      # str_detect(family, "\\(") ~ str_sub(
+      # str_detect(line, "\\(") ~ str_sub(
       #   name_extended, 1, str_locate(name_extended, " ")[,1]-1
       #  ),
       TRUE ~ "Original"
@@ -178,7 +178,7 @@ df_pkm <- df_pkm %>%
 df_pkm %>% tabyl(regional)
 
 
-### Family
+### Line
 ## Regional families
 df_pkm <- df_pkm %>%
   filter(name %in% c("Pichu", "Pikachu", "Exeggcute", "Cubone")) %>%
@@ -211,7 +211,7 @@ df_pkm <- df_pkm %>%
 ## Rest
 df_pkm <- df_pkm %>%
   mutate(
-    family = if_else(
+    line = if_else(
       regional != "Original",
       str_c(regional, " ", species),
       species
@@ -223,8 +223,8 @@ tab_spec_fam <- df_pkm %>%
   group_by(species) %>%
   summarize(
     n = n(),
-    n_fam = length(unique(family)),
-    description = str_c(unique(family), collapse = ", ")
+    n_fam = length(unique(line)),
+    description = str_c(unique(line), collapse = ", ")
     )
 
 tab_spec_fam %>% filter(n_fam > 1) %>% print(n = 50) #36 species with families >= 2
@@ -254,7 +254,7 @@ df_pkm %>% tabyl(extra)
 
 df_pkm %>% filter(!is.na(extra))
 
-df_pkm %>% filter(is.na(family))
+df_pkm %>% filter(is.na(line))
 
 
 df_pkm %>% tabyl(extra)
@@ -404,14 +404,14 @@ dim(mat1) == dim(mat2)
 tab_type_gen <- mat1+mat2 %>% as_tibble()
 tab_type_gen %>% gt
 
-### Types (family-wise)
+### Types (line-wise)
 mat1 <- df %>% 
-  distinct(family, type_1, .keep_all = T) %>%
+  distinct(line, type_1, .keep_all = T) %>%
   tabyl(gen, type_1) %>% select(-Unknown) %>%
   select(-1) %>% as.matrix()
 
 mat2 <- df %>%
-  distinct(family, type_2, .keep_all = T) %>%
+  distinct(line, type_2, .keep_all = T) %>%
   tabyl(gen, type_2) %>% select(-NA_, -Unknown) %>%
   select(-1) %>% as.matrix()
 dim(mat1) == dim(mat2)
