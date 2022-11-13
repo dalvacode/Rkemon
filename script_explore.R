@@ -22,51 +22,20 @@ raw_dex_new <- read_excel("data/pokemon_dex_hisui_paldea.xlsx", col_types = "tex
 
 # Tidy evolution line -----------------------------------------------------
 
-## Clean and select
+## Clean and filter
 df_lines <- raw_lines %>%
   clean_names() %>%
-  select(
-    line,
-    species1,
-    species2,
-    species3
-  )
-
-## Filter and format
-df_lines <- df_lines %>%
-  filter(!is.na(line)) %>%
-  #filter(!str_detect(line, "line")) %>%
-  mutate(
-    species = species1
-    )
-    # evo_n = case_when(
-    #   is.na(species2) ~ 1,
-    #   is.na(species3) ~ 2,
-    #   !is.na(species3) ~ 3,
-    #   TRUE ~ NA_real_
-    # ),
-    # regional = case_when(
-    #   #str_detect(line, "Stripe)$") ~ ,
-    #   str_detect(line, "\\(") ~ str_sub(
-    #     line,
-    #     str_locate(line, "\\(")[,1]+1,
-    #     -2
-    #     ),
-    #   TRUE ~ NA_character_
-    #   ),
-    ## Fix evolution method: evo1, evo2
-    # evo1bis = str_detect(evo1, "<"))
-  
+  filter(!is.na(line))
 
 df_lines <- df_lines %>%
   pivot_longer(
-    cols = c(species1, species2, species3),
+    cols = c(stage1, stage2, stage3),
     names_to = "test",
     values_to = "name"
     ) %>%
   distinct(species, line, name, .keep_all = T) %>%
   filter(!is.na(name)) %>%
-  select(species, line, name)
+  select(species, line, name, region_based)
 
 # df_lines <- df_lines %>%
 #   mutate(
@@ -81,7 +50,7 @@ df_lines <- df_lines %>%
 #       TRUE ~ NA_character_
 #       ),
 #   )
-# df_fam %>% tabyl(regional)
+# df_lines %>% tabyl(regional)
 
 
 # Tidy dex ----------------------------------------------------------------
@@ -110,20 +79,10 @@ df_dex <- raw_dex %>%
 
 #### Filter and format
 df_dex <- df_dex %>%
-  filter(
-    # ## Specific invididuals: Partner Pikachu and Eevee, Own Tempo Rockruff
-    # !str_detect(name, "^Partner |^Own Tempo"),
-    # ## Temporal status: Ash-Greninja, Shield Aegislash, Primal Kyogre/Groudon, Mega forms
-    # #!str_detect(name, "^Mega |^Primal |Ash-|Shield Forme$"),
-    # !str_detect(name, "^Mega |Ash-|Shield Forme$"),
-    # ## Others unimportant forms: Deoxys, Giratina, Forces of Nature, Keldeo
-    # !str_detect(name, " Forme$")
-    # ## Forms to keep, same line: Shaymin, Kyurem, Meloetta, Zygarde
-  ) %>%
   mutate(
     name_extended = name,
     name_extended = str_replace(name_extended, "^Hoopa ", ""),
-    name = str_replace(name, "Mega |Partner |Alolan |Galarian |Hisuian |Paldean ", ""), #missing: Paldean
+    name = str_replace(name, "Mega |Partner |Alolan |Galarian |Hisuian |Paldean ", ""),
     name = str_replace(name, " X| Y|Black |White |Primal ", ""),
     name = case_when(
       str_detect(name, "Mr.|Jr.|Tapu|Null") ~ name,
@@ -131,7 +90,7 @@ df_dex <- df_dex %>%
       str_detect(name, "Necrozma") ~ "Necrozma",
       str_detect(name, "Ash-Greninja") ~ "Greninja",
       str_detect(name, "Rockruff") ~ "Rockruff",
-      ndex %in% c(978:999) ~ name,
+      ndex %in% c(978:993) ~ name,
       str_detect(name, " ") ~ str_sub(name, 1, str_locate(name, " ")[,1]-1),
       TRUE ~ name
       )
@@ -143,8 +102,9 @@ df_dex <- df_dex %>%
 
 #### New variables
 ### Species
-df_pkm <- df_dex %>%
-  left_join(y = df_fam, by = "name")
+df_pkm <- df_lines %>%
+  select(species, line, name) %>%
+  left_join(x = df_dex, y = ., by = "name")
 
 
 ### Region
@@ -244,7 +204,7 @@ df_pkm <- df_pkm %>%
       str_detect(name_extended, "Zygarde 10%|Zygarde Complete| Origin ") ~ "Others", #to be excluded
       name == "Deoxys" & !str_detect(name_extended, "Deoxys Normal") ~ "Others", #to be excluded
       #name %in% c("Shaymin", "Kyurem", "Hoopa", "Oricorio") ~ "Normal",
-      TRUE ~ "Normal"
+      TRUE ~ "Base"
       )
     )
 
@@ -254,8 +214,6 @@ df_pkm %>% filter(!is.na(extra))
 
 df_pkm %>% filter(is.na(line))
 
-
-df_pkm %>% tabyl(extra)
 
 # ## Type number
 # df_pkm <- df_pkm %>%
@@ -361,17 +319,15 @@ df_pkm %>% tabyl(type_2) %>% arrange(1)# %>% nrow
 mat1 <- df_pkm %>%
   mutate(val = 1) %>%
   select(id, type_1, val) %>%
-  #column_to_rownames(var = "id") %>%
   pivot_wider(names_from = type_1, values_from = val, values_fill = 0) %>%
-  select(-id, -Unknown)
+  select(-id)
 mat1 <- mat1 %>% select(order(colnames(.))) %>% as.matrix()
 
 mat2 <- df_pkm %>%
   mutate(val = 1) %>%
   select(id, type_2, val) %>%
-  #column_to_rownames(var = "id") %>%
   pivot_wider(names_from = type_2, values_from = val, values_fill = 0) %>%
-  select(-id, -`NA`, -Unknown)
+  select(-id, -`NA`)
 mat2 <- mat2 %>% select(order(colnames(.))) %>% as.matrix()
 
 mat <- mat1 + mat2 %>% as_tibble()
@@ -398,12 +354,12 @@ df %>% vis_miss()
 ### Types (pokemon-wise)
 mat1 <- df %>% 
   distinct(name, type_1, .keep_all = T) %>%
-  tabyl(gen, type_1) %>% select(-Unknown) %>%
+  tabyl(gen, type_1) %>%
   select(-1) %>% as.matrix()
 
 mat2 <- df %>%
   distinct(name, type_2, .keep_all = T) %>%
-  tabyl(gen, type_2) %>% select(-NA_, -Unknown) %>%
+  tabyl(gen, type_2) %>% select(-NA_) %>%
   select(-1) %>% as.matrix()
 dim(mat1) == dim(mat2)
 
@@ -413,12 +369,12 @@ tab_type_gen %>% gt
 ### Types (line-wise)
 mat1 <- df %>% 
   distinct(line, type_1, .keep_all = T) %>%
-  tabyl(gen, type_1) %>% select(-Unknown) %>%
+  tabyl(gen, type_1) %>%
   select(-1) %>% as.matrix()
 
 mat2 <- df %>%
   distinct(line, type_2, .keep_all = T) %>%
-  tabyl(gen, type_2) %>% select(-NA_, -Unknown) %>%
+  tabyl(gen, type_2) %>% select(-NA_) %>%
   select(-1) %>% as.matrix()
 dim(mat1) == dim(mat2)
 
