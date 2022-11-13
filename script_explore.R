@@ -312,7 +312,7 @@ df_pkm <- df_pkm %>%
 df_pkm %>% tabyl(gen)
 
 
-### Types
+### Types (dummy)
 df_pkm %>% tabyl(type_1) %>% arrange(1)# %>% nrow
 df_pkm %>% tabyl(type_2) %>% arrange(1)# %>% nrow
 
@@ -320,7 +320,7 @@ mat1 <- df_pkm %>%
   mutate(val = 1) %>%
   select(id, type_1, val) %>%
   pivot_wider(names_from = type_1, values_from = val, values_fill = 0) %>%
-  select(-id)
+  select(-id, -`NA`)
 mat1 <- mat1 %>% select(order(colnames(.))) %>% as.matrix()
 
 mat2 <- df_pkm %>%
@@ -336,72 +336,7 @@ colnames(mat) <- str_c("d_", str_to_lower(colnames(mat)))
 df_pkm <- df_pkm %>% cbind(mat) %>% as_tibble()
 
 
+# Backup ------------------------------------------------------------------
 
-# Explore -----------------------------------------------------------------
-
-df <- df_pkm %>%
-  filter(
-    extra %!in% c("Individuals", "Others")
-    )
-
-### Missing values
-df %>% gg_miss_var()
-
-df %>% describe()
-df %>% vis_miss()
-
-
-### Types (pokemon-wise)
-mat1 <- df %>% 
-  distinct(name, type_1, .keep_all = T) %>%
-  tabyl(gen, type_1) %>%
-  select(-1) %>% as.matrix()
-
-mat2 <- df %>%
-  distinct(name, type_2, .keep_all = T) %>%
-  tabyl(gen, type_2) %>% select(-NA_) %>%
-  select(-1) %>% as.matrix()
-dim(mat1) == dim(mat2)
-
-tab_type_gen <- mat1+mat2 %>% as_tibble()
-tab_type_gen %>% gt
-
-### Types (line-wise)
-mat1 <- df %>% 
-  distinct(line, type_1, .keep_all = T) %>%
-  tabyl(gen, type_1) %>%
-  select(-1) %>% as.matrix()
-
-mat2 <- df %>%
-  distinct(line, type_2, .keep_all = T) %>%
-  tabyl(gen, type_2) %>% select(-NA_) %>%
-  select(-1) %>% as.matrix()
-dim(mat1) == dim(mat2)
-
-tab_type_gen <- mat1+mat2 %>% as_tibble()
-tab_type_gen %>% gt
-
-
-
-
-
-
-# To-do -------------------------------------------------------------------
-
-#Git repository
-#Check sex percentage of rare mons
-#Add Mythical mons
-
-
-
-
-
-
-
-
-
-
-
-
-
+# write_rds(df_pkm, file = "data/backup_df_pkm.RDS")
 
