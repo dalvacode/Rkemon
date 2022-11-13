@@ -9,3 +9,6 @@
 # R files
 .RData
 .Ruserdata
+
+# Outputs
+README.html
