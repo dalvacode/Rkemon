@@ -111,7 +111,7 @@ df_pkm <- df_lines %>%
 df_pkm <- df_pkm %>%
   mutate(
     regional = case_when(
-      name_extended %in% c("Basculin (White Stripe)", "Basculegion") ~ "Hisuian",
+      name_extended %in% c("Basculin (White Stripe)") ~ "Hisuian",
       str_detect(name_extended, "Alolan|Galarian|Hisuian|Paldean") ~ str_sub(
         name_extended, 1, str_locate(name_extended, " ")[,1]-1
         ),
@@ -128,7 +128,7 @@ df_pkm <- df_pkm %>%
   mutate(
     reg_evo = case_when(
       name %in% c("Perrserker", "Sirfetch'd", "Mr. Rime", "Cursola", "Obstagoon", "Runerigus") ~ "Galarian",
-      name %in% c("Overqwil", "Sneasler") ~ "Hisuian",
+      name %in% c("Overqwil", "Sneasler", "Basculegion") ~ "Hisuian",
       name %in% c("Clodsire") ~ "Paldean",
       TRUE ~ "No"
     ),
@@ -290,7 +290,7 @@ df_pkm <- df_pkm %>%
       extra == "Mega" ~ "6",
       regional == "Alolan" ~ "7",
       regional %in% c("Galarian") ~ "8",
-      regional %in% c("Hisuian") ~ "8.5",
+      regional %in% c("Hisuian") ~ "H",
       regional == "Paldean" ~ "9",
       TRUE ~ gen
     ),
@@ -303,7 +303,7 @@ df_pkm <- df_pkm %>%
       gen == "6" ~ str_c(gen, "-Kalos"),
       gen == "7" ~ str_c(gen, "-Alola"),
       gen == "8" ~ str_c(gen, "-Galar"),
-      gen == "8.5" ~ str_c(gen, "-Hisui"),
+      gen == "H" ~ str_c(gen, "-Hisui"),
       gen == "9" ~ str_c(gen, "-Paldea"),
       TRUE ~ NA_character_
       )
