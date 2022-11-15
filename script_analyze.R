@@ -81,8 +81,8 @@ tab_type_ind_html <- tab_type_ind %>%
     Total ~ px(80)
   ) %>%
   tab_header(
-    title = html("<b>Frequency of each type by generation</b>"),
-    subtitle = html("<b>(based on individual pokémons)</b>")
+    title = html("<b>Number of pokémons</b>"),
+    subtitle = html("<b>by type and generation</b>")
   ) %>%
   tab_source_note(source_note = html(
     "*Hisui<br>
@@ -163,8 +163,8 @@ tab_type_line_html <- tab_type_line %>%
     Total ~ px(80)
     ) %>%
   tab_header(
-    title = html("<b>Frequency of each type by generation</b>"),
-    subtitle = html("<b>(based on evolution lines)</b>")
+    title = html("<b>Number of evolution lines</b>"),
+    subtitle = html("<b>by type and generation</b>")
     ) %>%
   tab_source_note(
     source_note = html(
