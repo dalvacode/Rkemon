@@ -19,7 +19,8 @@ df <- df_pkm %>%
     )
 
 
-# Explore -----------------------------------------------------------------
+
+# Explore missing values --------------------------------------------------
 
 ### Missing values
 # df %>% gg_miss_var(show_pct = T)
@@ -27,21 +28,28 @@ df <- df_pkm %>%
 # df %>% vis_miss()
 
 
-### Types (pokemon-wise)
-mat1 <- df %>% 
-  distinct(name, type_1, .keep_all = T) %>%
+
+# Tab types x gen, pokémon-wise -------------------------------------------
+
+input <- df %>%
+  filter(
+    !str_detect(as.character(id), "\\.5")
+    )
+
+mat1 <- input %>% 
+  distinct(name, regional, type_1, .keep_all = T) %>%
   tabyl(gen, type_1) %>% select(-NA_) %>%
   select(-1) %>% as.matrix()
 
-mat2 <- df %>%
-  distinct(name, type_2, .keep_all = T) %>%
+mat2 <- input %>%
+  distinct(name, regional, type_2, .keep_all = T) %>%
   tabyl(gen, type_2) %>% select(-NA_) %>%
   select(-1) %>% as.matrix()
 dim(mat1) == dim(mat2)
 
 tab_type_ind <- mat1+mat2
 tab_type_ind <- t(tab_type_ind)
-colnames(tab_type_ind) <- tabyl(df, gen)[[1]]
+colnames(tab_type_ind) <- tabyl(input, gen)[[1]]
 tab_type_ind
 
 tab_type_ind_html <- tab_type_ind %>%
@@ -70,6 +78,10 @@ tab_type_ind_html <- tab_type_ind %>%
   tab_source_note(source_note = "*Hisui")
 
 gtsave(tab_type_ind_html, filename = "out/Types by generation (n of pokémons).html")
+
+
+
+# Tab types x gen, line-wise ----------------------------------------------
 
 ### Types (line-wise)
 mat1 <- df %>% 
