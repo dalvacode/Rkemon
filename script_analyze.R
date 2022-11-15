@@ -13,12 +13,6 @@ library(tidyverse)
 
 df_pkm <- read_rds("data/backup_df_pkm.RDS")
 
-df <- df_pkm %>%
-  filter(
-    extra %!in% c("Individuals", "Others")
-    )
-
-
 
 # Explore missing values --------------------------------------------------
 
@@ -31,8 +25,9 @@ df <- df_pkm %>%
 
 # Tab types x gen, pokémon-wise -------------------------------------------
 
-input <- df %>%
+input <- df_pkm %>%
   filter(
+    extra %!in% c("Individuals", "Others", "Mega"),
     !str_detect(as.character(id), "\\.5")
     )
 
@@ -60,22 +55,52 @@ tab_type_ind_html <- tab_type_ind %>%
   cols_align(columns = c(2:11), align = "center") %>%
   cols_label(H = "H*") %>%
   data_color(
-    columns = c(2:11),
+    columns = c(2:12),
     colors = scales::col_numeric(
-      palette = pals::cividis(n = 10),#pals::ocean.haline(n = 10),
+      #palette = pals::coolwarm(n = 3),
+      palette = pals::cividis(n = 10),
+      #pals::ocean.haline(n = 10),
       reverse = T,
-      domain = NULL
-    ), #alpha = 0.85
+      domain = NULL #c(0, max(tab_type_ind))
+    ),
+    #alpha = 0.85
   ) %>%
-  # data_color(
-  #   columns = c(12),
-  #   colors = scales::col_numeric(
-  #     palette = pals::cividis(n = 20)[1:10],#pals::ocean.haline(n = 10),
-  #     reverse = T,
-  #     domain = NULL
-  #   ), #alpha = 0.85
-  # ) %>%
-  tab_source_note(source_note = "*Hisui")
+  tab_style(
+    style = list(
+      #cell_fill(color = "lightcyan"),
+      cell_text(weight = "bold")
+      ),
+    locations = list(
+      cells_body(columns = c(Type, Total)),
+      cells_column_labels(),
+      cells_column_spanners()
+      )
+    ) %>%
+  cols_width(
+    c(str_c(1:9), "H") ~ px(50),
+    Total ~ px(80)
+  ) %>%
+  tab_header(
+    title = html("<b>Frequency of each type by generation</b>"),
+    subtitle = html("<b>(based on individual pokémons)</b>")
+  ) %>%
+  tab_source_note(source_note = html(
+    "*Hisui<br>
+    Color intensity by column."))
+
+list_cols <- c(str_c(1:9), "H")
+for (i in seq_along(list_cols)) {
+  tab_type_ind_html <- tab_type_ind_html %>%
+    tab_style(
+      style = list(cell_text(color = "red", weight = "bold")),
+      locations = cells_body(
+        columns = list_cols[i],
+        rows = tab_type_ind_html$`_data`[[list_cols[i]]] <= 1
+      )
+    )
+}
+
+tab_type_ind_html
 
 gtsave(tab_type_ind_html, filename = "out/Types by generation (n of pokémons).html")
 
@@ -83,32 +108,83 @@ gtsave(tab_type_ind_html, filename = "out/Types by generation (n of pokémons).h
 
 # Tab types x gen, line-wise ----------------------------------------------
 
-### Types (line-wise)
-mat1 <- df %>% 
-  distinct(line, type_1, .keep_all = T) %>%
-  tabyl(gen, type_1) %>% select(-NA_) %>%
-  select(-1) %>% as.matrix()
+input <- df_pkm %>%
+  filter(
+    extra %!in% c("Individuals", "Others", "Mega")
+    )
 
-mat2 <- df %>%
-  distinct(line, type_2, .keep_all = T) %>%
-  tabyl(gen, type_2) %>% select(-NA_) %>%
-  select(-1) %>% as.matrix()
-dim(mat1) == dim(mat2)
+midput <- input %>%
+  group_by(line, gen) %>%
+  summarize(
+    across(starts_with("d_"), ~ sum(.x, na.rm = T)),
+    across(starts_with("d_"), ~ if_else(.x > 0, 1, .x))
+    )
 
-tab_type_gen <- mat1+mat2
-tab_type_gen <- t(tab_type_gen)
-colnames(tab_type_gen) <- tabyl(df, gen)[[1]]
-tab_type_gen
+output <- midput %>%
+  group_by(gen) %>%
+  summarize(
+    across(starts_with("d_"), ~ sum(.x, na.rm = T))
+  )
 
-input <- tab_type_gen %>% as_tibble(rownames = "Type") %>% adorn_totals(where = "col") %>% gt
+tab_type_line <- output %>%
+  column_to_rownames(var = "gen") %>%
+  t()
 
-input %>% data_color(
-  columns = c(2:11),
-  colors = scales::col_numeric(
-    palette = pals::cividis(n = 10),#pals::ocean.haline(n = 10),
-    reverse = T,
-    domain = NULL
-  ),
-  #alpha = 0.85
-)
+tab_type_line_html <- tab_type_line %>%
+  as_tibble(rownames = "Type") %>%
+  mutate(Type = str_replace(Type, "d_", "") %>% str_to_sentence()) %>%
+  adorn_totals(where = "col") %>%
+  gt %>%
+  tab_spanner(label = "Generation", columns = c(2:11)) %>%
+  cols_align(columns = c(2:11), align = "center") %>%
+  cols_label(H = "H*") %>%
+  data_color(
+    columns = c(2:12),
+    colors = scales::col_numeric(
+      #palette = pals::coolwarm(n = 3),
+      #palette = pals::cividis(n = 10),
+      pals::ocean.haline(n = 30),
+      reverse = T,
+      domain = NULL
+      #domain = c(0, max(tab_type_line))
+    ),
+    #alpha = 0.85
+  ) %>%
+  tab_style(
+    style = list(cell_text(weight = "bold")),
+    locations = list(
+      cells_body(columns = c(Type, Total)),
+      cells_column_labels(),
+      cells_column_spanners()
+    )
+  ) %>%
+  cols_width(
+    c(str_c(1:9), "H") ~ px(50),
+    Total ~ px(80)
+    ) %>%
+  tab_header(
+    title = html("<b>Frequency of each type by generation</b>"),
+    subtitle = html("<b>(based on evolution lines)</b>")
+    ) %>%
+  tab_source_note(
+    source_note = html(
+      "*Hisui.<br>
+      Lines present across generations are over-represented (e.g. Pikachu in gen 1 and Pichu in gen 2).<br>
+      Color intensity by column."))
+
+list_cols <- c(str_c(1:9), "H")
+for (i in seq_along(list_cols)) {
+  tab_type_line_html <- tab_type_line_html %>%
+    tab_style(
+      style = list(cell_text(color = "red", weight = "bold")),
+      locations = cells_body(
+        columns = list_cols[i],
+        rows = tab_type_line_html$`_data`[[list_cols[i]]] <= 1
+        )
+      )
+}
+
+tab_type_line_html
+
+gtsave(tab_type_line_html, filename = "out/Types by generation (n of evo lines).html")
 
