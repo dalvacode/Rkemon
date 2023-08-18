@@ -1,7 +1,9 @@
 #### POKEMON ANALYSIS ####
 
+library(RColorBrewer)
+library(pals)
 library(gt)
-library(naniar)
+#library(naniar)
 library(readxl)
 library(janitor)
 library(lubridate)
@@ -70,14 +72,20 @@ df_dex <- raw_dex %>%
     type_2,
     pc_male = percentage_male,
     egg_type_1,
-    egg_type_2
+    egg_type_2,
+    st_hp = hp,
+    st_at = attack,
+    st_df = defense,
+    st_sa = sp_attack,
+    st_sd = sp_defense,
+    st_sp = speed
   ) %>%
   mutate(
-    across(c(id, ndex), ~ as.numeric(.x))
+    across(c(id, ndex, starts_with("st_")), ~ as.numeric(.x))
     )
 
 
-#### Filter and format
+#### Fix names
 df_dex <- df_dex %>%
   mutate(
     name_extended = name,
@@ -208,11 +216,9 @@ df_pkm <- df_pkm %>%
       )
     )
 
-df_pkm %>% tabyl(extra)
-
-df_pkm %>% filter(!is.na(extra))
-
-df_pkm %>% filter(is.na(line))
+# df_pkm %>% tabyl(extra)
+# df_pkm %>% filter(!is.na(extra))
+# df_pkm %>% filter(is.na(line))
 
 
 # ## Type number
